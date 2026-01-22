@@ -1,33 +1,33 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useQuickAuth,useMiniKit } from "@coinbase/onchainkit/minikit";
-import { useRouter } from "next/navigation";
-import { minikitConfig } from "../minikit.config";
+// import { useState, useEffect } from "react";
+// import { useQuickAuth,useMiniKit } from "@coinbase/onchainkit/minikit";
+// import { useRouter } from "next/navigation";
+// import { minikitConfig } from "../minikit.config";
 import styles from "./page.module.css";
 
-interface AuthResponse {
-  success: boolean;
-  user?: {
-    fid: number; // FID is the unique identifier for the user
-    issuedAt?: number;
-    expiresAt?: number;
-  };
-  message?: string; // Error messages come as 'message' not 'error'
-}
+// interface AuthResponse {
+//   success: boolean;
+//   user?: {
+//     fid: number; // FID is the unique identifier for the user
+//     issuedAt?: number;
+//     expiresAt?: number;
+//   };
+//   message?: string; // Error messages come as 'message' not 'error'
+// }
 
 
 export default function Home() {
-  const { isFrameReady, setFrameReady, context } = useMiniKit();
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
-  const router = useRouter();
+  // const { isFrameReady, setFrameReady, context } = useMiniKit();
+  // const [email, setEmail] = useState("");
+  // const [error, setError] = useState("");
+  // const router = useRouter();
 
   // Initialize the  miniapp
-  useEffect(() => {
-    if (!isFrameReady) {
-      setFrameReady();
-    }
-  }, [setFrameReady, isFrameReady]);
+  // useEffect(() => {
+  //   if (!isFrameReady) {
+  //     setFrameReady();
+  //   }
+  // }, [setFrameReady, isFrameReady]);
  
   
 
@@ -40,48 +40,48 @@ export default function Home() {
   //   userFid: string;
   // }>("/api/auth");
 
-  const { data: authData, isLoading: isAuthLoading, error: authError } = useQuickAuth<AuthResponse>(
-    "/api/auth",
-    { method: "GET" }
-  );
+  // const { data: authData, isLoading: isAuthLoading, error: authError } = useQuickAuth<AuthResponse>(
+  //   "/api/auth",
+  //   { method: "GET" }
+  // );
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  // const validateEmail = (email: string) => {
+  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  //   return emailRegex.test(email);
+  // };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  // const handleSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError("");
 
-    // Check authentication first
-    if (isAuthLoading) {
-      setError("Please wait while we verify your identity...");
-      return;
-    }
+  //   // Check authentication first
+  //   if (isAuthLoading) {
+  //     setError("Please wait while we verify your identity...");
+  //     return;
+  //   }
 
-    if (authError || !authData?.success) {
-      setError("Please authenticate to join the waitlist");
-      return;
-    }
+  //   if (authError || !authData?.success) {
+  //     setError("Please authenticate to join the waitlist");
+  //     return;
+  //   }
 
-    if (!email) {
-      setError("Please enter your email address");
-      return;
-    }
+  //   if (!email) {
+  //     setError("Please enter your email address");
+  //     return;
+  //   }
 
-    if (!validateEmail(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
+  //   if (!validateEmail(email)) {
+  //     setError("Please enter a valid email address");
+  //     return;
+  //   }
 
-    // TODO: Save email to database/API with user FID
-    console.log("Valid email submitted:", email);
-    console.log("User authenticated:", authData.user);
+  //   // TODO: Save email to database/API with user FID
+  //   console.log("Valid email submitted:", email);
+  //   console.log("User authenticated:", authData.user);
     
-    // Navigate to success page
-    router.push("/success");
-  };
+  //   // Navigate to success page
+  //   router.push("/success");
+  // };
 
   return (
     <div className={styles.container}>
@@ -91,28 +91,12 @@ export default function Home() {
       
       <div className={styles.content}>
         <div className={styles.waitlistForm}>
-          <h1 className={styles.title}>Join {minikitConfig.miniapp.name.toUpperCase()}</h1>
+          <h1 className={styles.title}>Wala pa akong maisip na idea hahaha.</h1>
           
           <p className={styles.subtitle}>
-             Hey {context?.user?.displayName || "there"}, Get early access and be the first to experience the future of<br />
-            crypto marketing strategy.
+            Iconvert ko nalang muna yung ibang Monad Apps ko into Base Apps
           </p>
-
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <input
-              type="email"
-              placeholder="Your amazing email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={styles.emailInput}
-            />
-            
-            {error && <p className={styles.error}>{error}</p>}
-            
-            <button type="submit" className={styles.joinButton}>
-              JOIN WAITLIST
-            </button>
-          </form>
+         
         </div>
       </div>
     </div>
