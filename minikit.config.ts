@@ -20,8 +20,7 @@ export const minikitConfig = {
     version: "1",
     name: "Brushie's",
     subtitle: "A drawing art mini-app on Base",
-    description:
-      "Adsorb the power of web3 with Brushie's, a drawing art mini-app on Base. Create and share your art, and mint it as NFTs to showcase your creativity on the blockchain. Join the waitlist now to unleash your artistic potential with Brushie's!",
+    description: "Draw your future onchain!",
     screenshotUrls: [`${ROOT_URL}/brushies-portrait.png`],
     iconUrl: `${ROOT_URL}/brushies.jpg`,
     splashImageUrl: `${ROOT_URL}/brushies.jpg`,
