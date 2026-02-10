@@ -111,7 +111,7 @@ export default function Home() {
             />
           </div>
           <p className={styles.subtitle}>
-            Draw something on your mind on-chain and mint it on Base.
+            Turn your imagination into on-chain art on Base
           </p>
         </div>
 
