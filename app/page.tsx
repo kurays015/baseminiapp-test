@@ -1,29 +1,30 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import {
-  ConnectWallet,
-  Wallet,
-  WalletDropdown,
-  WalletDropdownDisconnect,
-} from "@coinbase/onchainkit/wallet";
-import {
-  Avatar,
-  Name,
-  Address,
-  Identity,
-  EthBalance,
-} from "@coinbase/onchainkit/identity";
+// import { useMiniKit } from "@coinbase/onchainkit/minikit";
+// import {
+//   ConnectWallet,
+//   Wallet,
+//   WalletDropdown,
+//   WalletDropdownDisconnect,
+// } from "@coinbase/onchainkit/wallet";
+// import {
+//   Avatar,
+//   Name,
+//   Address,
+//   Identity,
+//   EthBalance,
+// } from "@coinbase/onchainkit/identity";
 import { useAccount, useWriteContract } from "wagmi";
 import { ArtCanvas } from "./components/ArtCanvas";
 import { ART_NFT_ABI, ART_NFT_ADDRESS } from "./lib/nftContract";
 import styles from "./page.module.css";
 import Image from "next/image";
+import { sdk } from "@farcaster/miniapp-sdk";
 
 export default function Home() {
-  const { isFrameReady, setFrameReady } = useMiniKit();
-  const { address, isConnected } = useAccount();
+  // const { isFrameReady, setFrameReady } = useMiniKit();
+  const { address } = useAccount();
   const [mintStatus, setMintStatus] = useState<
     "idle" | "uploading" | "minting" | "success" | "error"
   >("idle");
@@ -32,10 +33,14 @@ export default function Home() {
   const { writeContractAsync, isPending: isMintPending } = useWriteContract();
 
   useEffect(() => {
-    if (!isFrameReady) {
-      setFrameReady();
-    }
-  }, [setFrameReady, isFrameReady]);
+    sdk.actions.ready();
+  }, []);
+
+  // useEffect(() => {
+  //   if (!isFrameReady) {
+  //     setFrameReady();
+  //   }
+  // }, [setFrameReady, isFrameReady]);
 
   const handleExportAndMint = useCallback(
     async (blob: Blob) => {
@@ -117,7 +122,7 @@ export default function Home() {
 
         <div className={styles.panel}>
           <div className={styles.walletRow}>
-            <Wallet>
+            {/* <Wallet>
               <ConnectWallet />
               <WalletDropdown>
                 <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
@@ -129,32 +134,32 @@ export default function Home() {
 
                 <WalletDropdownDisconnect />
               </WalletDropdown>
-            </Wallet>
+            </Wallet> */}
           </div>
 
-          {isConnected && (
-            <>
-              <ArtCanvas onExport={handleExportAndMint} disabled={isBusy} />
-              {mintStatus === "uploading" && (
-                <p className={styles.status}>Uploading art to IPFS…</p>
-              )}
-              {mintStatus === "minting" && (
-                <p className={styles.status}>
-                  Minting NFT… Confirm in your wallet.
-                </p>
-              )}
-              {mintStatus === "success" && (
-                <p className={styles.statusSuccess}>NFT minted successfully.</p>
-              )}
-              {mintStatus === "error" && errorMessage && (
-                <p className={styles.statusError}>{errorMessage}</p>
-              )}
-            </>
-          )}
+          {/* {isConnected && ( */}
+          <>
+            <ArtCanvas onExport={handleExportAndMint} disabled={isBusy} />
+            {mintStatus === "uploading" && (
+              <p className={styles.status}>Uploading art to IPFS…</p>
+            )}
+            {mintStatus === "minting" && (
+              <p className={styles.status}>
+                Minting NFT… Confirm in your wallet.
+              </p>
+            )}
+            {mintStatus === "success" && (
+              <p className={styles.statusSuccess}>NFT minted successfully.</p>
+            )}
+            {mintStatus === "error" && errorMessage && (
+              <p className={styles.statusError}>{errorMessage}</p>
+            )}
+          </>
+          {/* )} */}
 
-          {!isConnected && (
+          {/* {!isConnected && (
             <p className={styles.hint}>Connect a wallet to draw and mint.</p>
-          )}
+          )} */}
         </div>
       </div>
     </div>
