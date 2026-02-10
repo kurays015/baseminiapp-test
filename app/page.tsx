@@ -1,28 +1,29 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import {
-  ConnectWallet,
-  Wallet,
-  WalletDropdown,
-  WalletDropdownDisconnect,
-} from "@coinbase/onchainkit/wallet";
-import {
-  Avatar,
-  Name,
-  Address,
-  Identity,
-  EthBalance,
-} from "@coinbase/onchainkit/identity";
+// import { useMiniKit } from "@coinbase/onchainkit/minikit";
+// import {
+//   ConnectWallet,
+//   Wallet,
+//   WalletDropdown,
+//   WalletDropdownDisconnect,
+// } from "@coinbase/onchainkit/wallet";
+// import {
+//   Avatar,
+//   Name,
+//   Address,
+//   Identity,
+//   EthBalance,
+// } from "@coinbase/onchainkit/identity";
 import { useAccount, useWriteContract } from "wagmi";
 import { ArtCanvas } from "./components/ArtCanvas";
 import { ART_NFT_ABI, ART_NFT_ADDRESS } from "./lib/nftContract";
 import styles from "./page.module.css";
 import Image from "next/image";
+import { sdk } from "@farcaster/miniapp-sdk";
 
 export default function Home() {
-  const { isFrameReady, setFrameReady } = useMiniKit();
+  // const { isFrameReady, setFrameReady } = useMiniKit();
   const { address, isConnected } = useAccount();
   const [mintStatus, setMintStatus] = useState<
     "idle" | "uploading" | "minting" | "success" | "error"
@@ -32,10 +33,14 @@ export default function Home() {
   const { writeContractAsync, isPending: isMintPending } = useWriteContract();
 
   useEffect(() => {
-    if (!isFrameReady) {
-      setFrameReady();
-    }
-  }, [setFrameReady, isFrameReady]);
+    sdk.actions.ready();
+  }, []);
+
+  // useEffect(() => {
+  //   if (!isFrameReady) {
+  //     setFrameReady();
+  //   }
+  // }, [setFrameReady, isFrameReady]);
 
   const handleExportAndMint = useCallback(
     async (blob: Blob) => {
@@ -116,7 +121,7 @@ export default function Home() {
         </div>
 
         <div className={styles.panel}>
-          <div className={styles.walletRow}>
+          {/* <div className={styles.walletRow}>
             <Wallet>
               <ConnectWallet />
               <WalletDropdown>
@@ -130,7 +135,7 @@ export default function Home() {
                 <WalletDropdownDisconnect />
               </WalletDropdown>
             </Wallet>
-          </div>
+          </div> */}
 
           {isConnected && (
             <>

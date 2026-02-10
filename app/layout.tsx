@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
           title: `Draw your future onchain`,
           action: {
             name: `Launch ${minikitConfig.miniapp.name}`,
-            type: "launch_frame",
+            type: "launch_miniapp",
           },
         },
       }),
