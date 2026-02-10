@@ -1,0 +1,479 @@
+/* ArtCanvas.module.css — mobile-first */
+
+/* ─── Wrapper ──────────────────────────────────────────────────────────────── */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  font-family: 'DM Mono', 'Fira Code', 'Courier New', monospace;
+  background: #0d0d1a;
+}
+
+/* ─── Canvas area ──────────────────────────────────────────────────────────── */
+.canvasWrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  background: #0d0d1a;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  line-height: 0;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ─── Active tool badge (top-left HUD) ─────────────────────────────────────── */
+.toolBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 5px 7px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+  font-size: 12px;
+}
+
+.toolBadgeLabel {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+}
+
+.colorDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+/* ─── Bottom dock ──────────────────────────────────────────────────────────── */
+.dock {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(8, 8, 20, 0.97);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  /* safe area for notched phones */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ─── Slide-up tray ────────────────────────────────────────────────────────── */
+.tray {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  animation: slideUp 0.18s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.trayInner {
+  padding: 14px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trayTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.trayTitle {
+  margin: 0;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+
+.trayRow {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.trayRow::-webkit-scrollbar { display: none; }
+
+.trayBtn {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 52px;
+  padding: 8px 6px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: all 0.13s ease;
+  /* min tap target */
+  min-height: 60px;
+  justify-content: center;
+}
+
+.trayBtn:active {
+  transform: scale(0.94);
+}
+
+.trayBtn[data-active="true"] {
+  background: rgba(0,229,255,0.1);
+  border-color: rgba(0,229,255,0.45);
+  color: #00e5ff;
+  box-shadow: 0 0 14px rgba(0,229,255,0.18);
+}
+
+.trayBtnIcon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.trayBtnShape {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.trayBtnLabel {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ─── Fill toggle ──────────────────────────────────────────────────────────── */
+.fillToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+}
+
+.fillToggle input[type="checkbox"] {
+  accent-color: #00e5ff;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+/* ─── Color grid ───────────────────────────────────────────────────────────── */
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.colorSwatch {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.12s;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  /* min tap target via min-height */
+  min-height: 36px;
+}
+
+.colorSwatch:active       { transform: scale(0.88); }
+
+.colorSwatch[data-selected="true"] {
+  border-color: #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.4);
+  transform: scale(1.12);
+}
+
+.hiddenInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.colorPreviewBar {
+  height: 5px;
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: background 0.15s;
+}
+
+/* ─── Sliders ──────────────────────────────────────────────────────────────── */
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sliderLabel {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  min-width: 50px;
+}
+
+.sliderValue {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  min-width: 30px;
+  text-align: right;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #00e5ff;
+  box-shadow: 0 0 8px rgba(0,229,255,0.6);
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #00e5ff;
+  border: none;
+  box-shadow: 0 0 8px rgba(0,229,255,0.6);
+}
+
+/* ─── Dock bar ─────────────────────────────────────────────────────────────── */
+.dockBar {
+  display: flex;
+  align-items: stretch;
+  padding: 6px 8px 8px;
+  gap: 2px;
+}
+
+.dockBtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 52px;
+  padding: 6px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  transition: all 0.13s ease;
+}
+
+.dockBtn:active        { transform: scale(0.9); }
+
+.dockBtn[data-active="true"] {
+  background: rgba(0,229,255,0.08);
+  color: #00e5ff;
+}
+
+.dockIcon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.dockLabel {
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.dockColorCircle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: block;
+  border: 2px solid rgba(255,255,255,0.25);
+  transition: box-shadow 0.15s;
+}
+
+.dockDivider {
+  width: 1px;
+  background: rgba(255,255,255,0.07);
+  margin: 6px 4px;
+  border-radius: 1px;
+}
+
+.dockClearBtn {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 52px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: rgba(255,100,100,0.55);
+  cursor: pointer;
+  transition: all 0.13s ease;
+}
+
+.dockClearBtn:active {
+  background: rgba(255,64,129,0.1);
+  color: #ff4081;
+  transform: scale(0.9);
+}
+
+.dockMintBtn {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 52px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #00e5ff, #2979ff);
+  border: none;
+  border-radius: 10px;
+  color: #000;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  box-shadow: 0 0 16px rgba(0,229,255,0.3);
+}
+
+.dockMintBtn:active:not(:disabled) {
+  transform: scale(0.92);
+  box-shadow: 0 0 24px rgba(0,229,255,0.5);
+}
+
+.dockMintBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ─── Desktop: wider canvas, side toolbar ──────────────────────────────────── */
+@media (min-width: 768px) {
+  .wrapper {
+    flex-direction: row;
+    height: auto;
+  }
+
+  .canvasWrap {
+    flex: 1;
+    aspect-ratio: 4/3;
+    height: auto;
+  }
+
+  .dock {
+    flex: 0 0 200px;
+    flex-direction: column;
+    border-top: none;
+    border-left: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 0;
+    overflow-y: auto;
+  }
+
+  .tray {
+    border-top: none;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    animation: none;
+  }
+
+  /* On desktop the tray is always visible (no bottom dock bar) */
+  .dockBar {
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 8px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .dockBtn,
+  .dockClearBtn,
+  .dockMintBtn {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    min-height: 44px;
+    width: 100%;
+    border-radius: 8px;
+  }
+
+  .dockDivider {
+    width: 100%;
+    height: 1px;
+    margin: 4px 0;
+  }
+
+  .trayRow {
+    flex-wrap: wrap;
+  }
+
+  .colorGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .sliderRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .sliderValue { text-align: left; }
+}
