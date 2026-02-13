@@ -151,4 +151,6 @@ export const ART_NFT_ABI = [
 ] as const;
 
 export const ART_NFT_ADDRESS =
-  (process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS as `0x${string}`) || undefined;
+  process.env.NODE_ENV === "production"
+    ? process.env.NEXT_PUBLIC_MAINNET_NFT_CONTRACT_ADDRESS
+    : process.env.NEXT_PUBLIC_TESTNET_NFT_CONTRACT_ADDRESS;

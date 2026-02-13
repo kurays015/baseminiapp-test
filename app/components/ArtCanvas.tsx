@@ -19,7 +19,7 @@ const PRESET_COLORS = [
   "#ff3b3b",
   "#ff8c00",
   "#ffe600",
-  "#00e676",
+  "#6366f1",
   "#00e5ff",
   "#2979ff",
   "#d500f9",
@@ -55,9 +55,7 @@ const SHAPES: { id: ShapeType; icon: string; label: string }[] = [
   { id: "star", icon: "★", label: "Star" },
 ];
 
-const CANVAS_W = 800;
-const CANVAS_H = 600;
-const BG_COLOR = "#0d0d1a";
+const BG_COLOR = "#0f172a";
 
 // ─── Drawing helpers ──────────────────────────────────────────────────────────
 
@@ -176,6 +174,7 @@ export function ArtCanvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const lastPoint = useRef<{ x: number; y: number } | null>(null);
   const shapeStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -189,17 +188,75 @@ export function ArtCanvas({
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>(null);
+  const [history, setHistory] = useState<ImageData[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   const activeColor = color === "custom" ? customColor : color;
 
+  // ── Resize canvas to match container ────────────────────────────────────────
+  const resizeCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const overlay = overlayRef.current;
+    const wrapper = wrapperRef.current;
+    if (!canvas || !overlay || !wrapper) return;
+
+    const rect = wrapper.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    // Set display size
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
+    overlay.style.width = `${rect.width}px`;
+    overlay.style.height = `${rect.height}px`;
+
+    // Set actual size in memory (scaled for retina)
+    const width = rect.width * dpr;
+    const height = rect.height * dpr;
+
+    // Save current canvas content
+    const ctx = canvas.getContext("2d")!;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    // Resize
+    canvas.width = width;
+    canvas.height = height;
+    overlay.width = width;
+    overlay.height = height;
+
+    // Scale context to match device pixel ratio
+    ctx.scale(dpr, dpr);
+    overlay.getContext("2d")!.scale(dpr, dpr);
+
+    // Restore or clear
+    if (imageData.width > 0 && imageData.height > 0) {
+      ctx.putImageData(imageData, 0, 0);
+    } else {
+      ctx.fillStyle = BG_COLOR;
+      ctx.fillRect(0, 0, rect.width, rect.height);
+    }
+  }, []);
+
   // ── Init canvas ─────────────────────────────────────────────────────────────
   useEffect(() => {
+    resizeCanvas();
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
+
+    // Initial clear
+    const rect = canvas.getBoundingClientRect();
     ctx.fillStyle = BG_COLOR;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, []);
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    // Save initial state
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    setHistory([imageData]);
+    setHistoryIndex(0);
+
+    // Handle window resize
+    window.addEventListener("resize", resizeCanvas);
+    return () => window.removeEventListener("resize", resizeCanvas);
+  }, [resizeCanvas]);
 
   // ── Close tray on canvas tap ─────────────────────────────────────────────
   const closeTray = useCallback(() => setActiveTab(null), []);
@@ -214,23 +271,39 @@ export function ArtCanvas({
       const canvas = canvasRef.current;
       if (!canvas) return null;
       const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
+
       if ("touches" in e) {
         const t = e.touches[0] ?? e.changedTouches[0];
         if (!t) return null;
         return {
-          x: (t.clientX - rect.left) * scaleX,
-          y: (t.clientY - rect.top) * scaleY,
+          x: t.clientX - rect.left,
+          y: t.clientY - rect.top,
         };
       }
       return {
-        x: (e.clientX - rect.left) * scaleX,
-        y: (e.clientY - rect.top) * scaleY,
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
       };
     },
     [],
   );
+
+  // ── Save to history ─────────────────────────────────────────────────────────
+  const saveToHistory = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    setHistory((prev) => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push(imageData);
+      // Limit history to last 20 states to save memory
+      if (newHistory.length > 20) newHistory.shift();
+      return newHistory;
+    });
+    setHistoryIndex((prev) => Math.min(prev + 1, 19));
+  }, [historyIndex]);
 
   // ── Freehand stroke ─────────────────────────────────────────────────────────
   const drawStroke = useCallback(
@@ -272,7 +345,8 @@ export function ArtCanvas({
       const overlay = overlayRef.current;
       if (!overlay) return;
       const ctx = overlay.getContext("2d")!;
-      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const rect = overlay.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
       applyShape(
         ctx,
         shape,
@@ -304,7 +378,8 @@ export function ArtCanvas({
         fill,
         false,
       );
-      overlay.getContext("2d")!.clearRect(0, 0, overlay.width, overlay.height);
+      const rect = overlay.getBoundingClientRect();
+      overlay.getContext("2d")!.clearRect(0, 0, rect.width, rect.height);
     },
     [shape, activeColor, size, opacity, fill],
   );
@@ -365,9 +440,21 @@ export function ArtCanvas({
         shapeStart.current = null;
       }
       lastPoint.current = null;
+      saveToHistory();
     },
-    [isDrawing, shape, commitShape, getPoint],
+    [isDrawing, shape, commitShape, getPoint, saveToHistory],
   );
+
+  // ── Undo ───────────────────────────────────────────────────────────────────
+  const undo = useCallback(() => {
+    if (historyIndex <= 0) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+    const newIndex = historyIndex - 1;
+    ctx.putImageData(history[newIndex], 0, 0);
+    setHistoryIndex(newIndex);
+  }, [history, historyIndex]);
 
   // ── Clear ──────────────────────────────────────────────────────────────────
   const clear = useCallback(() => {
@@ -375,8 +462,14 @@ export function ArtCanvas({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
+    const rect = canvas.getBoundingClientRect();
     ctx.fillStyle = BG_COLOR;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    // Reset history
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    setHistory([imageData]);
+    setHistoryIndex(0);
   }, []);
 
   // ── Export ─────────────────────────────────────────────────────────────────
@@ -403,17 +496,10 @@ export function ArtCanvas({
   return (
     <div className={styles.wrapper}>
       {/* ── Canvas area ────────────────────────────────────────────────────── */}
-      <div className={styles.canvasWrap}>
-        <canvas
-          ref={canvasRef}
-          width={CANVAS_W}
-          height={CANVAS_H}
-          className={styles.canvas}
-        />
+      <div className={styles.canvasWrap} ref={wrapperRef}>
+        <canvas ref={canvasRef} className={styles.canvas} />
         <canvas
           ref={overlayRef}
-          width={CANVAS_W}
-          height={CANVAS_H}
           className={styles.overlay}
           onMouseDown={startDraw}
           onMouseMove={moveDraw}
@@ -432,22 +518,6 @@ export function ArtCanvas({
                   : "crosshair",
           }}
         />
-        {/* Active tool badge */}
-        <div className={styles.toolBadge}>
-          <span>
-            {shape !== "none" ? currentShape.icon : currentBrush.icon}
-          </span>
-          <span className={styles.toolBadgeLabel}>
-            {shape !== "none" ? currentShape.label : currentBrush.label}
-          </span>
-          <span
-            className={styles.colorDot}
-            style={{
-              background: activeColor,
-              boxShadow: `0 0 6px ${activeColor}`,
-            }}
-          />
-        </div>
       </div>
 
       {/* ── Bottom dock + trays ─────────────────────────────────────────────── */}
@@ -458,7 +528,6 @@ export function ArtCanvas({
             {/* BRUSH tray */}
             {activeTab === "brush" && (
               <div className={styles.trayInner}>
-                <p className={styles.trayTitle}>Brush</p>
                 <div className={styles.trayRow}>
                   {BRUSHES.map((b) => (
                     <button
@@ -470,9 +539,9 @@ export function ArtCanvas({
                         setBrush(b.id);
                         setShape("none");
                       }}
+                      title={b.label}
                     >
                       <span className={styles.trayBtnIcon}>{b.icon}</span>
-                      <span className={styles.trayBtnLabel}>{b.label}</span>
                     </button>
                   ))}
                 </div>
@@ -483,7 +552,6 @@ export function ArtCanvas({
             {activeTab === "shape" && (
               <div className={styles.trayInner}>
                 <div className={styles.trayTitleRow}>
-                  <p className={styles.trayTitle}>Shape</p>
                   {shape !== "none" && (
                     <label className={styles.fillToggle}>
                       <input
@@ -503,9 +571,9 @@ export function ArtCanvas({
                       className={styles.trayBtn}
                       data-active={shape === s.id}
                       onClick={() => setShape(s.id)}
+                      title={s.label}
                     >
                       <span className={styles.trayBtnShape}>{s.icon}</span>
-                      <span className={styles.trayBtnLabel}>{s.label}</span>
                     </button>
                   ))}
                 </div>
@@ -515,7 +583,6 @@ export function ArtCanvas({
             {/* COLOR tray */}
             {activeTab === "color" && (
               <div className={styles.trayInner}>
-                <p className={styles.trayTitle}>Color</p>
                 <div className={styles.colorGrid}>
                   {PRESET_COLORS.map((c) => (
                     <button
@@ -557,7 +624,6 @@ export function ArtCanvas({
             {/* SETTINGS tray */}
             {activeTab === "settings" && (
               <div className={styles.trayInner}>
-                <p className={styles.trayTitle}>Settings</p>
                 <div className={styles.sliderRow}>
                   <span className={styles.sliderLabel}>Size</span>
                   <input
@@ -597,9 +663,9 @@ export function ArtCanvas({
             className={styles.dockBtn}
             data-active={activeTab === "brush"}
             onClick={() => toggleTab("brush")}
+            title="Brush"
           >
             <span className={styles.dockIcon}>{currentBrush.icon}</span>
-            <span className={styles.dockLabel}>Brush</span>
           </button>
 
           <button
@@ -607,9 +673,9 @@ export function ArtCanvas({
             className={styles.dockBtn}
             data-active={activeTab === "shape"}
             onClick={() => toggleTab("shape")}
+            title="Shape"
           >
             <span className={styles.dockIcon}>{currentShape.icon}</span>
-            <span className={styles.dockLabel}>Shape</span>
           </button>
 
           <button
@@ -617,6 +683,7 @@ export function ArtCanvas({
             className={styles.dockBtn}
             data-active={activeTab === "color"}
             onClick={() => toggleTab("color")}
+            title="Color"
           >
             <span
               className={styles.dockColorCircle}
@@ -626,7 +693,6 @@ export function ArtCanvas({
                   activeTab === "color" ? `0 0 10px ${activeColor}` : "none",
               }}
             />
-            <span className={styles.dockLabel}>Color</span>
           </button>
 
           <button
@@ -634,17 +700,31 @@ export function ArtCanvas({
             className={styles.dockBtn}
             data-active={activeTab === "settings"}
             onClick={() => toggleTab("settings")}
+            title="Settings"
           >
             <span className={styles.dockIcon}>⚙️</span>
-            <span className={styles.dockLabel}>Settings</span>
           </button>
 
           {/* Divider */}
           <div className={styles.dockDivider} />
 
-          <button type="button" className={styles.dockClearBtn} onClick={clear}>
+          <button
+            type="button"
+            className={styles.dockClearBtn}
+            onClick={undo}
+            disabled={historyIndex <= 0}
+            title="Undo"
+          >
+            <span className={styles.dockIcon}>↩️</span>
+          </button>
+
+          <button
+            type="button"
+            className={styles.dockClearBtn}
+            onClick={clear}
+            title="Clear"
+          >
             <span className={styles.dockIcon}>🗑️</span>
-            <span className={styles.dockLabel}>Clear</span>
           </button>
 
           <button
@@ -652,11 +732,9 @@ export function ArtCanvas({
             className={styles.dockMintBtn}
             onClick={handleExport}
             disabled={disabled || !hasDrawn}
+            title={disabled ? "Minting" : "Mint"}
           >
-            <span className={styles.dockIcon}>{disabled ? "⏳" : ""}</span>
-            <span className={styles.dockLabel}>
-              {disabled ? "Minting" : "Mint"}
-            </span>
+            <span className={styles.dockIcon}>{disabled ? "⏳" : "🎨"}</span>
           </button>
         </div>
       </div>
