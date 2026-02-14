@@ -14,21 +14,20 @@ import { useCallback, useEffect, useState } from "react";
 //   Identity,
 //   EthBalance,
 // } from "@coinbase/onchainkit/identity";
-import { useAccount } from "wagmi";
+import { useAccount, useSendCalls } from "wagmi";
 import { ArtCanvas } from "./components/ArtCanvas";
 import { ART_NFT_ABI, ART_NFT_ADDRESS } from "./lib/nftContract";
 import styles from "./page.module.css";
 import { sdk } from "@farcaster/miniapp-sdk";
-import { sendSponsoredContractCall } from "./lib/sponsoredCalls";
+import { encodeFunctionData } from "viem";
+import { chainId } from "./lib/chainId";
 
 export default function Home() {
   const { address } = useAccount();
-  const [mintStatus, setMintStatus] = useState<
-    "idle" | "uploading" | "minting" | "success" | "error"
-  >("idle");
+
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const [txHash, setTxHash] = useState<string>("");
   const [isValidDevice, setIsValidDevice] = useState(true);
+  const { sendCalls, isSuccess, isPending, isError } = useSendCalls();
 
   useEffect(() => {
     sdk.actions.ready();
@@ -56,16 +55,12 @@ export default function Home() {
         setErrorMessage(
           "NFT contract not configured. Set NEXT_PUBLIC_NFT_CONTRACT_ADDRESS.",
         );
-        setMintStatus("error");
         return;
       }
 
       setErrorMessage("");
-      setTxHash("");
-      setMintStatus("uploading");
 
       try {
-        // Step 1: Upload to IPFS
         console.log("Uploading to IPFS...");
         const form = new FormData();
         form.append("image", blob, "art.png");
@@ -84,51 +79,50 @@ export default function Home() {
         const { metadataUri } = (await res.json()) as { metadataUri: string };
         console.log("Metadata URI:", metadataUri);
 
-        // Step 2: Mint with sponsored transaction
-        setMintStatus("minting");
         console.log("Minting NFT with sponsored transaction...");
         console.log("Contract:", ART_NFT_ADDRESS);
         console.log("Recipient:", address);
 
-        const result = await sendSponsoredContractCall({
-          to: ART_NFT_ADDRESS as `0x${string}`,
-          abi: ART_NFT_ABI,
-          functionName: "mint",
-          args: [address, metadataUri],
-          from: address as `0x${string}`, // IMPORTANT: Pass the address from wagmi
+        // const result = await sendSponsoredContractCall({
+        //   to: ART_NFT_ADDRESS as `0x${string}`,
+        //   abi: ART_NFT_ABI,
+        //   functionName: "mint",
+        //   args: [address, metadataUri],
+        //   from: address as `0x${string}`, // IMPORTANT: Pass the address from wagmi
+        // });
+
+        //mint function call
+        await sendCalls({
+          calls: [
+            {
+              to: ART_NFT_ADDRESS as `0x${string}`,
+              data: encodeFunctionData({
+                abi: ART_NFT_ABI,
+                functionName: "mint",
+                args: [address as `0x${string}`, metadataUri],
+              }),
+            },
+          ],
+          chainId: chainId,
+          capabilities: {
+            paymasterService: {
+              url: process.env.NEXT_PUBLIC_PAYMASTER_PROXY_SERVER_URL as string,
+            },
+          },
         });
-
-        console.log("Sponsored mint result:", result);
-
-        // Extract transaction hash from result
-        if (result) {
-          let hash = "";
-          if (typeof result === "string") {
-            hash = result;
-          } else if (typeof result === "object" && result !== null) {
-            // Try to extract hash from various possible structures
-            hash =
-              (result as { hash?: string }).hash ||
-              (result as { txHash?: string }).txHash ||
-              (result as { transactionHash?: string }).transactionHash ||
-              JSON.stringify(result);
-          }
-          setTxHash(hash);
-        }
-
-        setMintStatus("success");
       } catch (e) {
         console.error("Mint error:", e);
-        setMintStatus("error");
         setErrorMessage(
           e instanceof Error ? e.message : "Something went wrong.",
         );
       }
     },
-    [address],
+    [address, sendCalls],
   );
 
-  const isBusy = mintStatus === "uploading" || mintStatus === "minting";
+  console.log(isPending, "isPending");
+  console.log(isSuccess, "isSuccess");
+  console.log(isError, "isError");
 
   return (
     <div className={styles.container}>
@@ -171,8 +165,7 @@ export default function Home() {
                 marginBottom: "1rem",
               }}
             >
-              Brushie&apos;s is designed for mobile phones and tablets (up to
-              768px width).
+              Brushie&apos;s is designed for mobile phones and tablets.
             </p>
             <p
               style={{
@@ -204,30 +197,15 @@ export default function Home() {
               </Wallet>
             </div> */}
 
-            <ArtCanvas onExport={handleExportAndMint} disabled={isBusy} />
+            <ArtCanvas onExport={handleExportAndMint} disabled={isPending} />
 
-            {mintStatus === "uploading" && (
-              <p className={styles.status}>Uploading…</p>
-            )}
-            {mintStatus === "minting" && (
-              <p className={styles.status}>Minting…</p>
-            )}
-            {mintStatus === "success" && (
+            {isPending && <p className={styles.status}>Minting…</p>}
+            {isSuccess && (
               <div className={styles.statusSuccess}>
                 <p>Minted!</p>
-                {txHash && (
-                  <a
-                    href={`https://basescan.org/tx/${txHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.txLink}
-                  >
-                    View on Basescan
-                  </a>
-                )}
               </div>
             )}
-            {mintStatus === "error" && errorMessage && (
+            {isError && errorMessage && (
               <p className={styles.statusError}>{errorMessage}</p>
             )}
           </div>
