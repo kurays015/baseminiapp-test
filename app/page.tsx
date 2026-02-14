@@ -64,7 +64,7 @@ export default function Home() {
         console.log("Uploading to IPFS...");
         const form = new FormData();
         form.append("image", blob, "art.png");
-        form.append("name", `Base Art #${Date.now()}`);
+        form.append("name", `Brushie's #${Date.now()}`);
 
         const res = await fetch("/api/upload", {
           method: "POST",
