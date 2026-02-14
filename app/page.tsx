@@ -1,19 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  ConnectWallet,
-  Wallet,
-  WalletDropdown,
-  WalletDropdownDisconnect,
-} from "@coinbase/onchainkit/wallet";
-import {
-  Avatar,
-  Name,
-  Address,
-  Identity,
-  EthBalance,
-} from "@coinbase/onchainkit/identity";
+// import {
+//   ConnectWallet,
+//   Wallet,
+//   WalletDropdown,
+//   WalletDropdownDisconnect,
+// } from "@coinbase/onchainkit/wallet";
+// import {
+//   Avatar,
+//   Name,
+//   Address,
+//   Identity,
+//   EthBalance,
+// } from "@coinbase/onchainkit/identity";
 import { useAccount } from "wagmi";
 import { ArtCanvas } from "./components/ArtCanvas";
 import { ART_NFT_ABI, ART_NFT_ADDRESS } from "./lib/nftContract";
@@ -52,11 +52,6 @@ export default function Home() {
 
   const handleExportAndMint = useCallback(
     async (blob: Blob) => {
-      if (!address) {
-        setErrorMessage("Connect your wallet first.");
-        setMintStatus("error");
-        return;
-      }
       if (!ART_NFT_ADDRESS) {
         setErrorMessage(
           "NFT contract not configured. Set NEXT_PUBLIC_NFT_CONTRACT_ADDRESS.",
@@ -100,7 +95,7 @@ export default function Home() {
           abi: ART_NFT_ABI,
           functionName: "mint",
           args: [address, metadataUri],
-          from: address, // IMPORTANT: Pass the address from wagmi
+          from: address as `0x${string}`, // IMPORTANT: Pass the address from wagmi
         });
 
         console.log("Sponsored mint result:", result);
@@ -194,7 +189,7 @@ export default function Home() {
       ) : (
         <div className={styles.content}>
           <div className={styles.panel}>
-            <div className={styles.walletRow}>
+            {/* <div className={styles.walletRow}>
               <Wallet>
                 <ConnectWallet disconnectedLabel="Connect" />
                 <WalletDropdown>
@@ -207,7 +202,7 @@ export default function Home() {
                   <WalletDropdownDisconnect />
                 </WalletDropdown>
               </Wallet>
-            </div>
+            </div> */}
 
             <ArtCanvas onExport={handleExportAndMint} disabled={isBusy} />
 

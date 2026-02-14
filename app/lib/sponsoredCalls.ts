@@ -1,10 +1,11 @@
-import { createBaseAccountSDK, base } from "@base-org/account";
+import { createBaseAccountSDK } from "@base-org/account";
 import { encodeFunctionData, numberToHex } from "viem";
 import type { Abi, EncodeFunctionDataParameters, Hex } from "viem";
 import {
   SendSponsoredCallsParams,
   SendSponsoredContractCallParams,
 } from "./types";
+import { chainId } from "./chainId";
 
 /**
  * Sends a sponsored (paymaster-backed) `wallet_sendCalls` request via Base Account.
@@ -19,11 +20,6 @@ export async function sendSponsoredCalls({
     process.env.NODE_ENV === "production"
       ? process.env.NEXT_PUBLIC_PAYMASTER_PROXY_SERVER_URL
       : process.env.NEXT_PUBLIC_TEST_PAYMASTER_PROXY_SERVER_URL;
-
-  const chainId =
-    process.env.NODE_ENV === "production"
-      ? base.constants.CHAIN_IDS.base
-      : base.constants.CHAIN_IDS.baseSepolia;
 
   console.log("🔍 Paymaster Debug:");
   console.log("  - Environment:", process.env.NODE_ENV);
@@ -52,7 +48,7 @@ export async function sendSponsoredCalls({
     appName: "Brushies by Densityy",
     appLogoUrl:
       "https://media.istockphoto.com/id/905247136/vector/paint-icon.jpg?s=612x612&w=0&k=20&c=BHuKjO4-V5_6mYASmmha4wS1ag4vQv3GH2y-kdB6HNM=",
-    appChainIds: [base.constants.CHAIN_IDS.baseSepolia],
+    appChainIds: [chainId],
   });
 
   const provider = sdk.getProvider();
@@ -84,6 +80,36 @@ export async function sendSponsoredCalls({
   console.log("✅ Transaction sent:", result);
   return result;
 }
+
+// how to use sendCalls
+// import { useSendCalls } from "wagmi";
+// import { encodeFunctionData, parseEther } from "viem";
+
+// function MyComponent() {
+//   const { sendCalls, isPending } = useSendCalls();
+
+//   const handleSend = () => {
+//     sendCalls({
+//       calls: [
+//         {
+//           to: "0x...",
+//           value: parseEther("0.01"),
+//         },
+//         {
+//           to: "0x...",
+//           data: encodeFunctionData({ abi, functionName: "mint", args: [...] }),
+//         },
+//       ],
+//       chainId: 8453, // Base mainnet
+//       // Optional: sponsor gas with paymaster
+//       capabilities: {
+//         paymasterService: {
+//           url: "https://api.developer.coinbase.com/rpc/v1/base/YOUR_KEY",
+//         },
+//       },
+//     });
+//   };
+// }
 
 /**
  * Convenience wrapper: build calldata from ABI + fn + args,
